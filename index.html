@@ -3,457 +3,297 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>NumDrop</title>
+<title>Tetris</title>
 <style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html,body{height:100%;overflow:hidden;background:#111;color:#eee;font-family:system-ui,sans-serif;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+body{display:flex;align-items:center;justify-content:center}
+#wrap{display:flex;flex-direction:column;align-items:center;max-width:360px;width:100%;height:100%;max-height:750px;padding:8px;gap:6px}
 
-  :root {
-    --bg: #0f0f1a;
-    --panel: #1a1a2e;
-    --border: #2a2a4a;
-    --text: #e0e0ff;
-    --dim: #6a6a9a;
-    --accent: #00d4ff;
-    --gold: #ffd700;
-    --gap: 4px;
-  }
+#hdr{display:flex;justify-content:space-between;width:100%;flex-shrink:0}
+#hdr h1{font-size:1.3rem;font-weight:800;letter-spacing:3px;color:#0ff}
+.sb{text-align:center;min-width:48px}
+.sb-l{font-size:.55rem;text-transform:uppercase;letter-spacing:1px;color:#666}
+.sb-v{font-size:1rem;font-weight:700}
 
-  html, body {
-    height: 100%;
-    overflow: hidden;
-    background: var(--bg);
-    color: var(--text);
-    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-    touch-action: manipulation;
-    -webkit-tap-highlight-color: transparent;
-    user-select: none;
-    -webkit-user-select: none;
-  }
+#main{display:flex;gap:10px;flex:1;width:100%;min-height:0;align-items:flex-start;justify-content:center}
 
-  body { display: flex; align-items: center; justify-content: center; }
+#board-wrap{position:relative;background:#1a1a1a;border:2px solid #333;border-radius:4px;aspect-ratio:10/20;height:100%;max-height:100%}
+#board{display:grid;grid-template-columns:repeat(10,1fr);grid-template-rows:repeat(20,1fr);width:100%;height:100%;gap:1px;padding:1px}
+.cell{border-radius:2px;background:#222}
+.cell.filled{border:1px solid rgba(255,255,255,.15)}
 
-  #wrap {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    width: 100%;
-    max-width: 380px;
-    height: 100%;
-    max-height: 780px;
-    padding: 10px;
-    gap: 10px;
-  }
+#side{display:flex;flex-direction:column;gap:12px;flex-shrink:0;width:70px}
+.side-label{font-size:.6rem;text-transform:uppercase;letter-spacing:1px;color:#666;margin-bottom:4px}
+#next-box{background:#1a1a1a;border:1px solid #333;border-radius:4px;padding:4px;display:grid;grid-template-columns:repeat(4,1fr);grid-template-rows:repeat(4,1fr);gap:1px;aspect-ratio:1}
+#next-box .cell{background:#1a1a1a}
 
-  /* Header */
-  #hdr { display: flex; justify-content: space-between; align-items: center; width: 100%; flex-shrink: 0; }
-  #hdr h1 {
-    font-size: 1.4rem; font-weight: 800; letter-spacing: 2px;
-    background: linear-gradient(135deg, var(--accent), #a855f7);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-  }
-  .st { text-align: center; min-width: 44px; }
-  .st-l { font-size: 0.55rem; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); }
-  .st-v { font-size: 1.05rem; font-weight: 700; }
+#controls{display:flex;gap:4px;width:100%;flex-shrink:0;justify-content:center;flex-wrap:wrap}
+.cbtn{background:#1a1a1a;border:1px solid #333;border-radius:6px;color:#888;font-size:1.2rem;padding:10px 14px;cursor:pointer;flex:1;max-width:60px;text-align:center;-webkit-tap-highlight-color:transparent}
+.cbtn:active{background:#222;color:#0ff;border-color:#0ff}
 
-  /* Piece preview */
-  #preview {
-    display: flex; align-items: center; justify-content: center; gap: 14px;
-    width: 100%; flex-shrink: 0;
-  }
-  .pv-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); margin-bottom: 2px; text-align: center; }
-  .pv-num {
-    width: 50px; height: 50px; border-radius: 12px;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 1.5rem; font-weight: 800; color: #fff;
-    text-shadow: 0 2px 4px rgba(0,0,0,0.4);
-  }
-  .pv-num.cur { border: 3px solid rgba(255,255,255,0.5); box-shadow: 0 0 14px rgba(0,212,255,0.3); }
-  .pv-num.nxt { width: 38px; height: 38px; font-size: 1.1rem; opacity: 0.5; }
-  .pv-arrow { color: var(--dim); font-size: 0.8rem; }
+.ov{position:fixed;inset:0;background:rgba(0,0,0,.85);display:flex;flex-direction:column;align-items:center;justify-content:center;z-index:50;gap:10px;padding:20px;text-align:center}
+.ov.hidden{display:none}
+.ov h2{font-size:1.8rem;color:#0ff}
+.ov p{color:#888;font-size:.85rem}
+.ov .big{font-size:2.2rem;font-weight:800;color:#fff}
+.play{padding:12px 40px;border:none;border-radius:8px;background:#0ff;color:#111;font-size:1rem;font-weight:700;cursor:pointer;margin-top:4px}
+.play:active{opacity:.8}
 
-  /* Grid */
-  #grid-area { flex: 1; width: 100%; display: flex; flex-direction: column; align-items: center; min-height: 0; }
-  #gw {
-    position: relative; background: var(--panel); border: 2px solid var(--border);
-    border-radius: 12px; padding: var(--gap); width: 100%; aspect-ratio: 5 / 10; max-height: 100%;
-  }
-  #grid {
-    display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(10, 1fr);
-    gap: var(--gap); width: 100%; height: 100%;
-  }
-  .c {
-    border-radius: 7px; display: flex; align-items: center; justify-content: center;
-    font-weight: 800; font-size: clamp(1rem, 4.5vw, 1.7rem);
-    background: rgba(255,255,255,0.03);
-  }
-  .c.f { color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.4); }
-  .c.ghost { opacity: 0.2; border: 2px dashed rgba(255,255,255,0.2); }
-  .c.clearing { animation: pop .3s ease-out forwards; }
-  .c.chain { animation: cpop .35s ease-out forwards; }
-  .c.drop { animation: drp .15s ease-in forwards; }
-
-  @keyframes pop { 0%{transform:scale(1);opacity:1} 50%{transform:scale(1.2)} 100%{transform:scale(0);opacity:0} }
-  @keyframes cpop { 0%{transform:scale(1);opacity:1} 30%{transform:scale(1.3)} 100%{transform:scale(0);opacity:0} }
-  @keyframes drp { from{transform:translateY(-70%);opacity:.4} to{transform:translateY(0);opacity:1} }
-
-  /* Tap zones */
-  #zones { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(5,1fr); z-index: 10; border-radius: 12px; overflow: hidden; }
-  .zone { cursor: pointer; }
-  .zone:active { background: rgba(255,255,255,0.06); }
-
-  /* Column buttons */
-  #cbtns {
-    display: grid; grid-template-columns: repeat(5,1fr); gap: var(--gap);
-    width: 100%; padding: 0 var(--gap); margin-top: 6px; flex-shrink: 0;
-  }
-  .cbtn {
-    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
-    color: var(--dim); font-size: 1rem; font-weight: 700; padding: 10px 0;
-    cursor: pointer; text-align: center; -webkit-tap-highlight-color: transparent;
-  }
-  .cbtn:active { background: rgba(0,212,255,0.1); color: var(--accent); border-color: var(--accent); }
-
-  /* Combo */
-  .combo {
-    position: absolute; font-size: 1.2rem; font-weight: 800; color: var(--gold);
-    text-shadow: 0 0 10px rgba(255,215,0,0.5); pointer-events: none; z-index: 20;
-    left: 50%; top: 50%; animation: flt .8s ease-out forwards;
-  }
-  @keyframes flt { 0%{transform:translate(-50%,-50%) scale(.5);opacity:0} 20%{transform:translate(-50%,-60%) scale(1.15);opacity:1} 100%{transform:translate(-50%,-110%) scale(.85);opacity:0} }
-
-  /* Bottom */
-  #bot { display: flex; justify-content: center; gap: 10px; width: 100%; flex-shrink: 0; }
-  .btn {
-    padding: 9px 16px; border: 1px solid var(--border); border-radius: 10px;
-    background: var(--panel); color: var(--text); font-size: 0.78rem; font-weight: 600;
-    cursor: pointer; -webkit-tap-highlight-color: transparent;
-  }
-  .btn:active { background: rgba(0,212,255,0.1); border-color: var(--accent); }
-
-  /* Overlays */
-  .ov {
-    position: fixed; inset: 0; background: rgba(15,15,26,0.93);
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    z-index: 100; gap: 12px; padding: 24px; text-align: center;
-    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
-  }
-  .ov.hidden { display: none; }
-  .ov h2 {
-    font-size: 2rem; font-weight: 800;
-    background: linear-gradient(135deg, var(--accent), #a855f7);
-    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
-  }
-  .ov .sub { color: var(--dim); font-size: 0.9rem; line-height: 1.5; max-width: 280px; }
-  .ov .big { font-size: 2.5rem; font-weight: 800; color: var(--gold); }
-  .go {
-    padding: 14px 44px; border: none; border-radius: 12px;
-    background: linear-gradient(135deg, var(--accent), #a855f7);
-    color: #fff; font-size: 1.1rem; font-weight: 700; cursor: pointer; margin-top: 4px;
-  }
-  .go:active { opacity: 0.85; }
-  .rules { text-align: left; max-width: 270px; line-height: 1.7; font-size: 0.88rem; color: var(--dim); }
-  .rules strong { color: var(--text); }
-
-  /* Colors — only 5 values used */
-  .n1 { background: #2563eb; }
-  .n2 { background: #059669; }
-  .n3 { background: #d97706; }
-  .n4 { background: #dc2626; }
-  .n5 { background: #7c3aed; }
+/* Piece colors */
+.p-I{background:#00f0f0}.p-O{background:#f0f000}.p-T{background:#a000f0}
+.p-S{background:#00f000}.p-Z{background:#f00000}.p-J{background:#0000f0}.p-L{background:#f0a000}
 </style>
 </head>
 <body>
-
 <div id="wrap">
   <div id="hdr">
-    <div class="st"><div class="st-l">Score</div><div class="st-v" id="sc">0</div></div>
-    <h1>NUMDROP</h1>
+    <div class="sb"><div class="sb-l">Score</div><div class="sb-v" id="sc">0</div></div>
+    <h1>TETRIS</h1>
     <div style="display:flex;gap:8px">
-      <div class="st"><div class="st-l">Level</div><div class="st-v" id="lv">1</div></div>
-      <div class="st"><div class="st-l">Best</div><div class="st-v" id="hi" style="color:var(--gold)">0</div></div>
+      <div class="sb"><div class="sb-l">Level</div><div class="sb-v" id="lv">1</div></div>
+      <div class="sb"><div class="sb-l">Lines</div><div class="sb-v" id="ln">0</div></div>
     </div>
   </div>
-
-  <div id="preview">
-    <div><div class="pv-label">Drop</div><div id="cur" class="pv-num cur n1">1</div></div>
-    <span class="pv-arrow">&#9654;</span>
-    <div><div class="pv-label">Next</div><div id="nxt" class="pv-num nxt n2">2</div></div>
-  </div>
-
-  <div id="grid-area">
-    <div id="gw">
-      <div id="grid"></div>
-      <div id="zones"></div>
+  <div id="main">
+    <div id="board-wrap"><div id="board"></div></div>
+    <div id="side">
+      <div><div class="side-label">Next</div><div id="next-box"></div></div>
     </div>
   </div>
-  <div id="cbtns"></div>
-  <div id="bot">
-    <button class="btn" id="bp">Pause</button>
-    <button class="btn" id="bh">How to Play</button>
+  <div id="controls">
+    <div class="cbtn" id="bl">&#9664;</div>
+    <div class="cbtn" id="bd">&#9660;</div>
+    <div class="cbtn" id="br">&#9654;</div>
+    <div class="cbtn" id="brot">&#8635;</div>
+    <div class="cbtn" id="bdrp">&#9868;</div>
   </div>
 </div>
 
-<!-- Start -->
 <div class="ov" id="s-start">
-  <h2>NUMDROP</h2>
-  <p class="sub">Match the numbers!</p>
-  <div class="rules">
-    <p><strong>Tap a column</strong> to drop a number.</p>
-    <p>Connect <strong>3 or more</strong> of the same number and they clear!</p>
-    <p>Combos and full rows score big.</p>
-  </div>
-  <button class="go" id="b-go">Play</button>
+  <h2>TETRIS</h2>
+  <p>Arrow keys or tap buttons to play</p>
+  <button class="play" id="b-start">Play</button>
 </div>
 
-<!-- Game Over -->
 <div class="ov hidden" id="s-over">
   <h2>Game Over</h2>
-  <p class="sub" id="o-msg"></p>
   <div class="big" id="o-sc">0</div>
-  <p class="st-l">Final Score</p>
-  <div style="display:flex;gap:12px;margin-top:2px">
-    <div class="st"><div class="st-l">Level</div><div class="st-v" id="o-lv">1</div></div>
-    <div class="st"><div class="st-l">Clears</div><div class="st-v" id="o-cl">0</div></div>
-    <div class="st"><div class="st-l">Best Chain</div><div class="st-v" id="o-ch">0</div></div>
-  </div>
-  <button class="go" id="b-again">Play Again</button>
+  <p>Lines: <span id="o-ln">0</span> &middot; Level: <span id="o-lv">1</span></p>
+  <button class="play" id="b-again">Play Again</button>
 </div>
 
-<!-- Pause -->
-<div class="ov hidden" id="s-pause"><h2>Paused</h2><button class="go" id="b-res">Resume</button></div>
-
-<!-- Help -->
-<div class="ov hidden" id="s-help">
-  <h2>How to Play</h2>
-  <div class="rules">
-    <p><strong>Tap a column</strong> to drop the current number.</p>
-    <p>When <strong>3 or more of the same number</strong> are connected (up/down/left/right), they all clear!</p>
-    <p>Blocks above fall down after a clear — chain reactions earn bonus points.</p>
-    <p>Full rows also clear, just like Tetris.</p>
-    <p>Game ends when any column reaches the top.</p>
-  </div>
-  <button class="go" id="b-hc">Got it</button>
+<div class="ov hidden" id="s-pause">
+  <h2>Paused</h2>
+  <button class="play" id="b-resume">Resume</button>
 </div>
 
 <script>
-(function() {
-  'use strict';
+(function(){
+'use strict';
 
-  const COLS = 5, ROWS = 10, MATCH = 3;
-  const NUM_TYPES = 5; // numbers 1-5
-  const CLEAR_MS = 300, CHAIN_MS = 180, PTS_PER_LV = 400;
+const W=10,H=20;
+const PIECES={
+  I:{shape:[[0,0],[1,0],[2,0],[3,0]],color:'I'},
+  O:{shape:[[0,0],[1,0],[0,1],[1,1]],color:'O'},
+  T:{shape:[[0,0],[1,0],[2,0],[1,1]],color:'T'},
+  S:{shape:[[1,0],[2,0],[0,1],[1,1]],color:'S'},
+  Z:{shape:[[0,0],[1,0],[1,1],[2,1]],color:'Z'},
+  J:{shape:[[0,0],[0,1],[1,1],[2,1]],color:'J'},
+  L:{shape:[[2,0],[0,1],[1,1],[2,1]],color:'L'}
+};
+const NAMES=Object.keys(PIECES);
+const SPEEDS=[800,720,630,550,470,380,300,220,140,100,80,60,50];
 
-  let grid, cur, nxt, score, level, clears, bestChain, on, busy, paused;
-  let hi = parseInt(localStorage.getItem('numdrop-hi') || '0', 10);
+let board,piece,next,px,py,score,lines,level,timer,on,paused;
 
-  const $ = id => document.getElementById(id);
-  const gEl = $('grid'), zEl = $('zones'), bEl = $('cbtns');
+const $=id=>document.getElementById(id);
+const boardEl=$('board'),nextEl=$('next-box');
 
-  // Build grid DOM
-  function build() {
-    gEl.innerHTML = ''; zEl.innerHTML = ''; bEl.innerHTML = '';
-    for (let r = 0; r < ROWS; r++)
-      for (let c = 0; c < COLS; c++) {
-        const d = document.createElement('div');
-        d.className = 'c'; d.id = `c${r}_${c}`;
-        gEl.appendChild(d);
-      }
-    for (let c = 0; c < COLS; c++) {
-      const z = document.createElement('div');
-      z.className = 'zone';
-      z.addEventListener('click', () => drop(c));
-      zEl.appendChild(z);
-      const b = document.createElement('div');
-      b.className = 'cbtn'; b.textContent = '\u25BC';
-      b.addEventListener('click', () => drop(c));
-      bEl.appendChild(b);
+function build(){
+  boardEl.innerHTML='';nextEl.innerHTML='';
+  for(let i=0;i<H*W;i++){const d=document.createElement('div');d.className='cell';boardEl.appendChild(d);}
+  for(let i=0;i<16;i++){const d=document.createElement('div');d.className='cell';nextEl.appendChild(d);}
+}
+
+function clearBoard(){board=Array.from({length:H},()=>Array(W).fill(null));}
+
+function cellAt(r,c){return boardEl.children[r*W+c];}
+
+function render(){
+  // Draw board
+  for(let r=0;r<H;r++)for(let c=0;c<W;c++){
+    const el=cellAt(r,c),v=board[r][c];
+    el.className=v?`cell filled p-${v}`:'cell';
+  }
+  // Draw ghost
+  if(piece){
+    let gy=py;
+    while(fits(piece.cells,px,gy+1))gy++;
+    if(gy!==py)for(const[dx,dy]of piece.cells){
+      const r=gy+dy,c=px+dx;
+      if(r>=0&&r<H&&c>=0&&c<W){const el=cellAt(r,c);if(!board[r][c])el.style.opacity='.15',el.className=`cell filled p-${piece.color}`;}
+    }
+    // Draw piece
+    for(const[dx,dy]of piece.cells){
+      const r=py+dy,c=px+dx;
+      if(r>=0&&r<H&&c>=0&&c<W)cellAt(r,c).className=`cell filled p-${piece.color}`;
     }
   }
-
-  function initGrid() { grid = Array.from({length: ROWS}, () => Array(COLS).fill(0)); }
-  function el(r, c) { return $(`c${r}_${c}`); }
-
-  function render() {
-    const gh = [];
-    if (on && !busy && cur > 0)
-      for (let c = 0; c < COLS; c++) gh.push(landRow(c));
-
-    for (let r = 0; r < ROWS; r++)
-      for (let c = 0; c < COLS; c++) {
-        const e = el(r, c), v = grid[r][c];
-        e.className = 'c'; e.textContent = '';
-        if (v > 0) { e.classList.add('f', `n${v}`); e.textContent = v; }
-        else if (gh.length && gh[c] === r) { e.classList.add('ghost', 'f', `n${cur}`); e.textContent = cur; }
-      }
+  // Next
+  for(let i=0;i<16;i++)nextEl.children[i].className='cell';
+  if(next)for(const[dx,dy]of next.cells){
+    const i=(dy+1)*4+(dx);
+    if(i>=0&&i<16)nextEl.children[i].className=`cell filled p-${next.color}`;
   }
+}
 
-  function landRow(col) {
-    for (let r = ROWS - 1; r >= 0; r--) if (grid[r][col] === 0) return r;
-    return -1;
+function makePiece(name){
+  const p=PIECES[name];
+  return{cells:p.shape.map(([x,y])=>[x,y]),color:p.color,name};
+}
+
+function randomPiece(){return makePiece(NAMES[Math.floor(Math.random()*NAMES.length)]);}
+
+function fits(cells,ox,oy){
+  for(const[dx,dy]of cells){
+    const c=ox+dx,r=oy+dy;
+    if(c<0||c>=W||r>=H)return false;
+    if(r>=0&&board[r][c])return false;
   }
+  return true;
+}
 
-  // Random number 1..NUM_TYPES
-  function rng() { return Math.floor(Math.random() * NUM_TYPES) + 1; }
-
-  function spawn() {
-    cur = nxt || rng();
-    nxt = rng();
-    $('cur').textContent = cur; $('cur').className = `pv-num cur n${cur}`;
-    $('nxt').textContent = nxt; $('nxt').className = `pv-num nxt n${nxt}`;
-    render();
+function rotate(){
+  if(!piece||piece.name==='O')return;
+  // Rotate 90 CW around bounding box center
+  const xs=piece.cells.map(c=>c[0]),ys=piece.cells.map(c=>c[1]);
+  const mx=Math.max(...xs),my=Math.max(...ys);
+  const newCells=piece.cells.map(([x,y])=>[my-y,x]);
+  // Wall kicks: try 0, -1, +1, -2, +2
+  for(const kick of[0,-1,1,-2,2]){
+    if(fits(newCells,px+kick,py)){piece.cells=newCells;px+=kick;return;}
   }
+}
 
-  function drop(col) {
-    if (!on || busy || paused) return;
-    const row = landRow(col);
-    if (row < 0) return;
-    grid[row][col] = cur;
-    busy = true;
-    render();
-    const e = el(row, col);
-    e.classList.add('drop');
-    setTimeout(() => { e.classList.remove('drop'); process(0); }, 150);
+function lock(){
+  for(const[dx,dy]of piece.cells){
+    const r=py+dy,c=px+dx;
+    if(r<0){gameOver();return;}
+    board[r][c]=piece.color;
   }
+  clearLines();
+  spawn();
+}
 
-  // Find connected groups of same number with size >= MATCH
-  function findMatches() {
-    const visited = Array.from({length: ROWS}, () => Array(COLS).fill(false));
-    const groups = [];
-
-    for (let r = 0; r < ROWS; r++)
-      for (let c = 0; c < COLS; c++) {
-        if (grid[r][c] === 0 || visited[r][c]) continue;
-        // BFS to find connected group of same number
-        const val = grid[r][c];
-        const group = [];
-        const queue = [[r, c]];
-        visited[r][c] = true;
-        while (queue.length) {
-          const [cr, cc] = queue.shift();
-          group.push([cr, cc]);
-          for (const [dr, dc] of [[0,1],[0,-1],[1,0],[-1,0]]) {
-            const nr = cr + dr, nc = cc + dc;
-            if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && !visited[nr][nc] && grid[nr][nc] === val) {
-              visited[nr][nc] = true;
-              queue.push([nr, nc]);
-            }
-          }
-        }
-        if (group.length >= MATCH) groups.push(group);
-      }
-    return groups;
-  }
-
-  function process(chain) {
-    const groups = findMatches();
-
-    // Also check full rows
-    const fullRows = [];
-    for (let r = 0; r < ROWS; r++)
-      if (grid[r].every(v => v > 0)) fullRows.push(r);
-
-    // Collect cells to clear
-    const toClear = new Set();
-    for (const g of groups) for (const [r, c] of g) toClear.add(`${r},${c}`);
-    for (const r of fullRows) for (let c = 0; c < COLS; c++) toClear.add(`${r},${c}`);
-
-    if (toClear.size === 0) {
-      if (chain > 0) bestChain = Math.max(bestChain, chain);
-      if (grid[0].some(v => v > 0)) { endGame(); return; }
-      busy = false;
-      spawn();
-      return;
-    }
-
-    clears += toClear.size;
-    const mult = chain + 1;
-    const pts = (toClear.size * 10 + groups.length * 20 + fullRows.length * 50) * mult;
-    addScore(pts);
-    if (chain > 0) showCombo(mult);
-
-    const anim = chain > 0 ? 'chain' : 'clearing';
-    for (const k of toClear) { const [r, c] = k.split(',').map(Number); el(r, c).classList.add(anim); }
-
-    setTimeout(() => {
-      for (const k of toClear) { const [r, c] = k.split(',').map(Number); grid[r][c] = 0; }
-      gravity();
-      render();
-      setTimeout(() => process(chain + 1), CHAIN_MS);
-    }, CLEAR_MS);
-  }
-
-  function gravity() {
-    for (let c = 0; c < COLS; c++) {
-      let w = ROWS - 1;
-      for (let r = ROWS - 1; r >= 0; r--)
-        if (grid[r][c] > 0) { if (r !== w) { grid[w][c] = grid[r][c]; grid[r][c] = 0; } w--; }
+function clearLines(){
+  let cleared=0;
+  for(let r=H-1;r>=0;r--){
+    if(board[r].every(c=>c)){
+      board.splice(r,1);
+      board.unshift(Array(W).fill(null));
+      cleared++;r++;
     }
   }
-
-  function addScore(pts) {
-    score += pts;
-    $('sc').textContent = score;
-    if (score > hi) { hi = score; $('hi').textContent = hi; localStorage.setItem('numdrop-hi', String(hi)); }
-    const nl = Math.floor(score / PTS_PER_LV) + 1;
-    if (nl > level) { level = nl; $('lv').textContent = level; }
+  if(cleared){
+    const pts=[0,100,300,500,800];
+    lines+=cleared;
+    score+=pts[cleared]*level;
+    level=Math.floor(lines/10)+1;
+    $('sc').textContent=score;$('ln').textContent=lines;$('lv').textContent=level;
+    resetTimer();
   }
+}
 
-  function showCombo(m) {
-    const p = document.createElement('div');
-    p.className = 'combo'; p.textContent = `x${m} COMBO!`;
-    $('gw').appendChild(p);
-    setTimeout(() => p.remove(), 800);
+function spawn(){
+  piece=next||randomPiece();
+  next=randomPiece();
+  // Center piece
+  const xs=piece.cells.map(c=>c[0]);
+  px=Math.floor((W-Math.max(...xs)-1)/2);
+  py=-Math.min(...piece.cells.map(c=>c[1]));
+  if(!fits(piece.cells,px,py))gameOver();
+}
+
+function tick(){
+  if(!on||paused)return;
+  if(fits(piece.cells,px,py+1))py++;
+  else lock();
+  render();
+}
+
+function resetTimer(){clearInterval(timer);timer=setInterval(tick,SPEEDS[Math.min(level-1,SPEEDS.length-1)]);}
+
+function hardDrop(){
+  while(fits(piece.cells,px,py+1))py++;
+  lock();render();
+}
+
+function startGame(){
+  clearBoard();score=0;lines=0;level=1;on=true;paused=false;
+  $('sc').textContent='0';$('ln').textContent='0';$('lv').textContent='1';
+  next=null;spawn();render();resetTimer();
+  $('s-start').classList.add('hidden');$('s-over').classList.add('hidden');
+}
+
+function gameOver(){
+  on=false;clearInterval(timer);
+  $('o-sc').textContent=score;$('o-ln').textContent=lines;$('o-lv').textContent=level;
+  $('s-over').classList.remove('hidden');
+}
+
+function togglePause(){
+  if(!on)return;
+  paused=!paused;
+  $('s-pause').classList.toggle('hidden',!paused);
+  if(!paused)resetTimer();else clearInterval(timer);
+}
+
+// Input
+function move(dir){if(on&&!paused&&fits(piece.cells,px+dir,py)){px+=dir;render();}}
+function softDrop(){if(on&&!paused&&fits(piece.cells,px,py+1)){py++;score++;$('sc').textContent=score;render();}}
+function doRotate(){if(on&&!paused){rotate();render();}}
+function doHardDrop(){if(on&&!paused)hardDrop();}
+
+document.addEventListener('keydown',e=>{
+  if(!on&&e.key==='Enter'){startGame();return;}
+  if(e.key==='Escape'||e.key==='p'){togglePause();return;}
+  if(!on||paused)return;
+  switch(e.key){
+    case'ArrowLeft':move(-1);break;
+    case'ArrowRight':move(1);break;
+    case'ArrowDown':softDrop();break;
+    case'ArrowUp':doRotate();break;
+    case' ':doHardDrop();break;
   }
+  e.preventDefault();
+});
 
-  function startGame() {
-    initGrid();
-    score = 0; level = 1; clears = 0; bestChain = 0;
-    busy = false; paused = false; on = true;
-    $('sc').textContent = '0'; $('lv').textContent = '1'; $('hi').textContent = hi;
-    render(); spawn();
-    $('s-start').classList.add('hidden');
-    $('s-over').classList.add('hidden');
-  }
+// Touch buttons
+$('bl').addEventListener('click',()=>move(-1));
+$('br').addEventListener('click',()=>move(1));
+$('bd').addEventListener('click',softDrop);
+$('brot').addEventListener('click',doRotate);
+$('bdrp').addEventListener('click',doHardDrop);
 
-  function endGame() {
-    on = false;
-    $('o-sc').textContent = score;
-    $('o-lv').textContent = level;
-    $('o-cl').textContent = clears;
-    $('o-ch').textContent = bestChain;
-    $('o-msg').textContent = score >= hi && score > 0 ? 'New High Score!' : 'Nice try!';
-    $('s-over').classList.remove('hidden');
-  }
+// Touch swipe on board
+let tx=null,ty=null;
+const bw=$('board-wrap');
+bw.addEventListener('touchstart',e=>{tx=e.touches[0].clientX;ty=e.touches[0].clientY;});
+bw.addEventListener('touchend',e=>{
+  if(tx===null)return;
+  const dx=e.changedTouches[0].clientX-tx,dy=e.changedTouches[0].clientY-ty;
+  tx=ty=null;
+  if(Math.abs(dx)<10&&Math.abs(dy)<10){doRotate();return;}
+  if(Math.abs(dx)>Math.abs(dy)){dx>0?move(1):move(-1);}
+  else if(dy>30)doHardDrop();
+});
 
-  function togglePause() {
-    if (!on || busy) return;
-    paused = !paused;
-    $('s-pause').classList.toggle('hidden', !paused);
-  }
+$('b-start').addEventListener('click',startGame);
+$('b-again').addEventListener('click',startGame);
+$('b-resume').addEventListener('click',togglePause);
 
-  // Keyboard
-  document.addEventListener('keydown', e => {
-    if (!on || busy || paused) {
-      if (e.key === 'Escape' && paused) togglePause();
-      if (e.key === 'Enter' && !on) startGame();
-      return;
-    }
-    if (e.key >= '1' && e.key <= '5') drop(+e.key - 1);
-    else if (e.key === 'Escape' || e.key === 'p') togglePause();
-  });
-
-  // Buttons
-  $('b-go').addEventListener('click', startGame);
-  $('b-again').addEventListener('click', startGame);
-  $('bp').addEventListener('click', togglePause);
-  $('b-res').addEventListener('click', togglePause);
-
-  let helpWas = false;
-  $('bh').addEventListener('click', () => { helpWas = on && !paused; if (helpWas) togglePause(); $('s-help').classList.remove('hidden'); });
-  $('b-hc').addEventListener('click', () => { $('s-help').classList.add('hidden'); if (helpWas && on && paused) togglePause(); });
-
-  build();
-  $('hi').textContent = hi;
+build();
 })();
 </script>
 </body>
