@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-<title>TenDrop</title>
+<title>NumDrop</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -30,550 +30,355 @@
     -webkit-user-select: none;
   }
 
-  body {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
+  body { display: flex; align-items: center; justify-content: center; }
 
-  #game-wrapper {
+  #wrap {
     display: flex;
     flex-direction: column;
     align-items: center;
     width: 100%;
-    max-width: 400px;
+    max-width: 380px;
     height: 100%;
-    max-height: 820px;
+    max-height: 780px;
     padding: 10px;
     gap: 10px;
   }
 
-  /* ── Header ── */
-  #header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    width: 100%;
-    flex-shrink: 0;
-  }
-
-  #header h1 {
-    font-size: 1.4rem;
-    font-weight: 800;
-    letter-spacing: 2px;
+  /* Header */
+  #hdr { display: flex; justify-content: space-between; align-items: center; width: 100%; flex-shrink: 0; }
+  #hdr h1 {
+    font-size: 1.4rem; font-weight: 800; letter-spacing: 2px;
     background: linear-gradient(135deg, var(--accent), #a855f7);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   }
+  .st { text-align: center; min-width: 44px; }
+  .st-l { font-size: 0.55rem; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); }
+  .st-v { font-size: 1.05rem; font-weight: 700; }
 
-  .stat-box { text-align: center; min-width: 50px; }
-  .stat-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); }
-  .stat-value { font-size: 1.1rem; font-weight: 700; }
-
-  /* ── Current / Next display ── */
-  #piece-bar {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 16px;
-    width: 100%;
-    padding: 8px 0;
-    flex-shrink: 0;
+  /* Piece preview */
+  #preview {
+    display: flex; align-items: center; justify-content: center; gap: 14px;
+    width: 100%; flex-shrink: 0;
   }
-
-  .piece-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); margin-bottom: 2px; text-align: center; }
-
-  .piece-num {
-    width: 52px;
-    height: 52px;
-    border-radius: 12px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 1.6rem;
-    font-weight: 800;
-    color: #fff;
+  .pv-label { font-size: 0.6rem; text-transform: uppercase; letter-spacing: 1px; color: var(--dim); margin-bottom: 2px; text-align: center; }
+  .pv-num {
+    width: 50px; height: 50px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem; font-weight: 800; color: #fff;
     text-shadow: 0 2px 4px rgba(0,0,0,0.4);
   }
+  .pv-num.cur { border: 3px solid rgba(255,255,255,0.5); box-shadow: 0 0 14px rgba(0,212,255,0.3); }
+  .pv-num.nxt { width: 38px; height: 38px; font-size: 1.1rem; opacity: 0.5; }
+  .pv-arrow { color: var(--dim); font-size: 0.8rem; }
 
-  .piece-num.current-piece {
-    border: 3px solid rgba(255,255,255,0.5);
-    box-shadow: 0 0 16px rgba(0,212,255,0.3);
+  /* Grid */
+  #grid-area { flex: 1; width: 100%; display: flex; flex-direction: column; align-items: center; min-height: 0; }
+  #gw {
+    position: relative; background: var(--panel); border: 2px solid var(--border);
+    border-radius: 12px; padding: var(--gap); width: 100%; aspect-ratio: 5 / 10; max-height: 100%;
   }
-
-  .piece-num.next { width: 40px; height: 40px; font-size: 1.2rem; opacity: 0.55; }
-
-  .piece-arrow { color: var(--dim); font-size: 0.9rem; margin: 0 2px; }
-
-  /* ── Grid ── */
-  #grid-area {
-    flex: 1;
-    width: 100%;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    min-height: 0;
-  }
-
-  #grid-wrapper {
-    position: relative;
-    background: var(--panel);
-    border: 2px solid var(--border);
-    border-radius: 12px;
-    padding: var(--gap);
-    width: 100%;
-    aspect-ratio: 4 / 8;
-    max-height: 100%;
-  }
-
   #grid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    grid-template-rows: repeat(8, 1fr);
-    gap: var(--gap);
-    width: 100%;
-    height: 100%;
+    display: grid; grid-template-columns: repeat(5, 1fr); grid-template-rows: repeat(10, 1fr);
+    gap: var(--gap); width: 100%; height: 100%;
   }
+  .c {
+    border-radius: 7px; display: flex; align-items: center; justify-content: center;
+    font-weight: 800; font-size: clamp(1rem, 4.5vw, 1.7rem);
+    background: rgba(255,255,255,0.03);
+  }
+  .c.f { color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.4); }
+  .c.ghost { opacity: 0.2; border: 2px dashed rgba(255,255,255,0.2); }
+  .c.clearing { animation: pop .3s ease-out forwards; }
+  .c.chain { animation: cpop .35s ease-out forwards; }
+  .c.drop { animation: drp .15s ease-in forwards; }
 
-  .cell {
-    border-radius: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 800;
-    font-size: clamp(1.2rem, 5vw, 2rem);
-    background: rgba(255, 255, 255, 0.03);
-    position: relative;
-  }
+  @keyframes pop { 0%{transform:scale(1);opacity:1} 50%{transform:scale(1.2)} 100%{transform:scale(0);opacity:0} }
+  @keyframes cpop { 0%{transform:scale(1);opacity:1} 30%{transform:scale(1.3)} 100%{transform:scale(0);opacity:0} }
+  @keyframes drp { from{transform:translateY(-70%);opacity:.4} to{transform:translateY(0);opacity:1} }
 
-  .cell.filled { color: #fff; text-shadow: 0 2px 4px rgba(0,0,0,0.4); }
+  /* Tap zones */
+  #zones { position: absolute; inset: 0; display: grid; grid-template-columns: repeat(5,1fr); z-index: 10; border-radius: 12px; overflow: hidden; }
+  .zone { cursor: pointer; }
+  .zone:active { background: rgba(255,255,255,0.06); }
 
-  .cell.ghost {
-    opacity: 0.2;
-    border: 2px dashed rgba(255,255,255,0.25);
+  /* Column buttons */
+  #cbtns {
+    display: grid; grid-template-columns: repeat(5,1fr); gap: var(--gap);
+    width: 100%; padding: 0 var(--gap); margin-top: 6px; flex-shrink: 0;
   }
+  .cbtn {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+    color: var(--dim); font-size: 1rem; font-weight: 700; padding: 10px 0;
+    cursor: pointer; text-align: center; -webkit-tap-highlight-color: transparent;
+  }
+  .cbtn:active { background: rgba(0,212,255,0.1); color: var(--accent); border-color: var(--accent); }
 
-  .cell.clearing { animation: pop 0.35s ease-out forwards; }
-  .cell.chain-clear { animation: chainPop 0.4s ease-out forwards; }
-  .cell.dropping { animation: drop 0.18s ease-in forwards; }
+  /* Combo */
+  .combo {
+    position: absolute; font-size: 1.2rem; font-weight: 800; color: var(--gold);
+    text-shadow: 0 0 10px rgba(255,215,0,0.5); pointer-events: none; z-index: 20;
+    left: 50%; top: 50%; animation: flt .8s ease-out forwards;
+  }
+  @keyframes flt { 0%{transform:translate(-50%,-50%) scale(.5);opacity:0} 20%{transform:translate(-50%,-60%) scale(1.15);opacity:1} 100%{transform:translate(-50%,-110%) scale(.85);opacity:0} }
 
-  @keyframes pop {
-    0% { transform: scale(1); opacity: 1; }
-    50% { transform: scale(1.25); }
-    100% { transform: scale(0); opacity: 0; }
-  }
-  @keyframes chainPop {
-    0% { transform: scale(1); opacity: 1; }
-    30% { transform: scale(1.35); }
-    100% { transform: scale(0); opacity: 0; }
-  }
-  @keyframes drop {
-    from { transform: translateY(-80%); opacity: 0.4; }
-    to { transform: translateY(0); opacity: 1; }
-  }
-
-  /* ── Tap zones ── */
-  #tap-zones {
-    position: absolute;
-    inset: 0;
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    z-index: 10;
-    border-radius: 12px;
-    overflow: hidden;
-  }
-  .tap-zone { cursor: pointer; }
-  .tap-zone:active { background: rgba(255,255,255,0.07); }
-
-  /* ── Column buttons below grid ── */
-  #col-buttons {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: var(--gap);
-    width: 100%;
-    padding: 0 var(--gap);
-    margin-top: 8px;
-    flex-shrink: 0;
-  }
-
-  .col-btn {
-    background: var(--panel);
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    color: var(--dim);
-    font-size: 1.1rem;
-    font-weight: 700;
-    padding: 12px 0;
-    cursor: pointer;
-    text-align: center;
-    transition: background 0.12s;
-    -webkit-tap-highlight-color: transparent;
-  }
-  .col-btn:active { background: rgba(0,212,255,0.12); color: var(--accent); border-color: var(--accent); }
-
-  /* ── Combo popup ── */
-  .combo-popup {
-    position: absolute;
-    font-size: 1.3rem;
-    font-weight: 800;
-    color: var(--gold);
-    text-shadow: 0 0 12px rgba(255,215,0,0.6);
-    pointer-events: none;
-    z-index: 20;
-    left: 50%; top: 50%;
-    transform: translate(-50%, -50%);
-    animation: floatUp 0.9s ease-out forwards;
-  }
-  @keyframes floatUp {
-    0% { transform: translate(-50%,-50%) scale(0.5); opacity: 0; }
-    20% { transform: translate(-50%,-60%) scale(1.2); opacity: 1; }
-    100% { transform: translate(-50%,-120%) scale(0.9); opacity: 0; }
-  }
-
-  /* ── Bottom bar ── */
-  #bottom-bar {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    width: 100%;
-    flex-shrink: 0;
-  }
-
+  /* Bottom */
+  #bot { display: flex; justify-content: center; gap: 10px; width: 100%; flex-shrink: 0; }
   .btn {
-    padding: 10px 18px;
-    border: 1px solid var(--border);
-    border-radius: 10px;
-    background: var(--panel);
-    color: var(--text);
-    font-size: 0.8rem;
-    font-weight: 600;
-    cursor: pointer;
-    -webkit-tap-highlight-color: transparent;
+    padding: 9px 16px; border: 1px solid var(--border); border-radius: 10px;
+    background: var(--panel); color: var(--text); font-size: 0.78rem; font-weight: 600;
+    cursor: pointer; -webkit-tap-highlight-color: transparent;
   }
-  .btn:active { background: rgba(0,212,255,0.12); border-color: var(--accent); }
+  .btn:active { background: rgba(0,212,255,0.1); border-color: var(--accent); }
 
-  /* ── Overlays ── */
-  .overlay {
-    position: fixed;
-    inset: 0;
-    background: rgba(15,15,26,0.93);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    z-index: 100;
-    gap: 14px;
-    padding: 24px;
-    text-align: center;
-    backdrop-filter: blur(6px);
-    -webkit-backdrop-filter: blur(6px);
+  /* Overlays */
+  .ov {
+    position: fixed; inset: 0; background: rgba(15,15,26,0.93);
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    z-index: 100; gap: 12px; padding: 24px; text-align: center;
+    backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
   }
-  .overlay.hidden { display: none; }
-
-  .overlay h2 {
-    font-size: 2rem;
-    font-weight: 800;
+  .ov.hidden { display: none; }
+  .ov h2 {
+    font-size: 2rem; font-weight: 800;
     background: linear-gradient(135deg, var(--accent), #a855f7);
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
   }
-
-  .overlay .subtitle { color: var(--dim); font-size: 0.9rem; line-height: 1.6; max-width: 300px; }
-  .overlay .final-score { font-size: 2.5rem; font-weight: 800; color: var(--gold); }
-
-  .btn-primary {
-    padding: 14px 44px;
-    border: none;
-    border-radius: 12px;
+  .ov .sub { color: var(--dim); font-size: 0.9rem; line-height: 1.5; max-width: 280px; }
+  .ov .big { font-size: 2.5rem; font-weight: 800; color: var(--gold); }
+  .go {
+    padding: 14px 44px; border: none; border-radius: 12px;
     background: linear-gradient(135deg, var(--accent), #a855f7);
-    color: #fff;
-    font-size: 1.1rem;
-    font-weight: 700;
-    cursor: pointer;
-    margin-top: 6px;
+    color: #fff; font-size: 1.1rem; font-weight: 700; cursor: pointer; margin-top: 4px;
   }
-  .btn-primary:active { opacity: 0.85; }
-
-  .rules {
-    text-align: left;
-    max-width: 280px;
-    line-height: 1.8;
-    font-size: 0.9rem;
-    color: var(--dim);
-  }
+  .go:active { opacity: 0.85; }
+  .rules { text-align: left; max-width: 270px; line-height: 1.7; font-size: 0.88rem; color: var(--dim); }
   .rules strong { color: var(--text); }
 
-  /* ── Number colors ── */
-  .num-1 { background: #2563eb; }
-  .num-2 { background: #059669; }
-  .num-3 { background: #d97706; }
-  .num-4 { background: #dc2626; }
-  .num-5 { background: #7c3aed; }
-  .num-6 { background: #db2777; }
-  .num-7 { background: #0891b2; }
-  .num-8 { background: #65a30d; }
-  .num-9 { background: #ea580c; }
-
-  /* ── Complement colors (pairs that make 10) ── */
-  .num-1, .num-9 { --pair-hint: #ea580c; }
-  .num-2, .num-8 { --pair-hint: #65a30d; }
-  .num-3, .num-7 { --pair-hint: #0891b2; }
-  .num-4, .num-6 { --pair-hint: #db2777; }
-  .num-5 { --pair-hint: #7c3aed; }
+  /* Colors — only 5 values used */
+  .n1 { background: #2563eb; }
+  .n2 { background: #059669; }
+  .n3 { background: #d97706; }
+  .n4 { background: #dc2626; }
+  .n5 { background: #7c3aed; }
 </style>
 </head>
 <body>
 
-<div id="game-wrapper">
-  <div id="header">
-    <div class="stat-box">
-      <div class="stat-label">Score</div>
-      <div class="stat-value" id="score-val">0</div>
-    </div>
-    <h1>TENDROP</h1>
-    <div style="display:flex;gap:10px">
-      <div class="stat-box">
-        <div class="stat-label">Level</div>
-        <div class="stat-value" id="level-val">1</div>
-      </div>
-      <div class="stat-box">
-        <div class="stat-label">Best</div>
-        <div class="stat-value" id="best-val" style="color:var(--gold)">0</div>
-      </div>
+<div id="wrap">
+  <div id="hdr">
+    <div class="st"><div class="st-l">Score</div><div class="st-v" id="sc">0</div></div>
+    <h1>NUMDROP</h1>
+    <div style="display:flex;gap:8px">
+      <div class="st"><div class="st-l">Level</div><div class="st-v" id="lv">1</div></div>
+      <div class="st"><div class="st-l">Best</div><div class="st-v" id="hi" style="color:var(--gold)">0</div></div>
     </div>
   </div>
 
-  <div id="piece-bar">
-    <div>
-      <div class="piece-label">Drop</div>
-      <div id="cur-piece" class="piece-num current-piece num-5">5</div>
-    </div>
-    <span class="piece-arrow">&#9654;</span>
-    <div>
-      <div class="piece-label">Next</div>
-      <div id="nxt-piece" class="piece-num next num-3">3</div>
-    </div>
+  <div id="preview">
+    <div><div class="pv-label">Drop</div><div id="cur" class="pv-num cur n1">1</div></div>
+    <span class="pv-arrow">&#9654;</span>
+    <div><div class="pv-label">Next</div><div id="nxt" class="pv-num nxt n2">2</div></div>
   </div>
 
   <div id="grid-area">
-    <div id="grid-wrapper">
+    <div id="gw">
       <div id="grid"></div>
-      <div id="tap-zones"></div>
+      <div id="zones"></div>
     </div>
   </div>
-
-  <div id="col-buttons"></div>
-
-  <div id="bottom-bar">
-    <button class="btn" id="btn-pause">Pause</button>
-    <button class="btn" id="btn-help">How to Play</button>
+  <div id="cbtns"></div>
+  <div id="bot">
+    <button class="btn" id="bp">Pause</button>
+    <button class="btn" id="bh">How to Play</button>
   </div>
 </div>
 
 <!-- Start -->
-<div class="overlay" id="screen-start">
-  <h2>TENDROP</h2>
-  <p class="subtitle">A simple number puzzle</p>
+<div class="ov" id="s-start">
+  <h2>NUMDROP</h2>
+  <p class="sub">Match the numbers!</p>
   <div class="rules">
     <p><strong>Tap a column</strong> to drop a number.</p>
-    <p>Two neighbors that add to <strong>10</strong> disappear!</p>
-    <p>e.g. <strong>3 + 7</strong>, <strong>4 + 6</strong>, <strong>2 + 8</strong></p>
-    <p>Full rows also clear. Don't let it overflow!</p>
+    <p>Connect <strong>3 or more</strong> of the same number and they clear!</p>
+    <p>Combos and full rows score big.</p>
   </div>
-  <button class="btn-primary" id="btn-start">Play</button>
+  <button class="go" id="b-go">Play</button>
 </div>
 
 <!-- Game Over -->
-<div class="overlay hidden" id="screen-over">
+<div class="ov hidden" id="s-over">
   <h2>Game Over</h2>
-  <p class="subtitle" id="over-msg"></p>
-  <div class="final-score" id="over-score">0</div>
-  <p class="stat-label">Final Score</p>
-  <div style="display:flex;gap:14px;margin-top:2px">
-    <div class="stat-box"><div class="stat-label">Level</div><div class="stat-value" id="over-level">1</div></div>
-    <div class="stat-box"><div class="stat-label">Pairs</div><div class="stat-value" id="over-pairs">0</div></div>
-    <div class="stat-box"><div class="stat-label">Chains</div><div class="stat-value" id="over-chains">0</div></div>
+  <p class="sub" id="o-msg"></p>
+  <div class="big" id="o-sc">0</div>
+  <p class="st-l">Final Score</p>
+  <div style="display:flex;gap:12px;margin-top:2px">
+    <div class="st"><div class="st-l">Level</div><div class="st-v" id="o-lv">1</div></div>
+    <div class="st"><div class="st-l">Clears</div><div class="st-v" id="o-cl">0</div></div>
+    <div class="st"><div class="st-l">Best Chain</div><div class="st-v" id="o-ch">0</div></div>
   </div>
-  <button class="btn-primary" id="btn-again">Play Again</button>
+  <button class="go" id="b-again">Play Again</button>
 </div>
 
 <!-- Pause -->
-<div class="overlay hidden" id="screen-pause">
-  <h2>Paused</h2>
-  <button class="btn-primary" id="btn-resume">Resume</button>
-</div>
+<div class="ov hidden" id="s-pause"><h2>Paused</h2><button class="go" id="b-res">Resume</button></div>
 
 <!-- Help -->
-<div class="overlay hidden" id="screen-help">
+<div class="ov hidden" id="s-help">
   <h2>How to Play</h2>
   <div class="rules">
     <p><strong>Tap a column</strong> to drop the current number.</p>
-    <p>If two touching numbers add up to <strong>10</strong>, they both clear.</p>
-    <p>Examples: 1+9, 2+8, 3+7, 4+6, 5+5</p>
+    <p>When <strong>3 or more of the same number</strong> are connected (up/down/left/right), they all clear!</p>
+    <p>Blocks above fall down after a clear — chain reactions earn bonus points.</p>
     <p>Full rows also clear, just like Tetris.</p>
-    <p>Cascading clears = chain bonus points!</p>
-    <p>Game over when a column overflows the top.</p>
+    <p>Game ends when any column reaches the top.</p>
   </div>
-  <button class="btn-primary" id="btn-help-close">Got it</button>
+  <button class="go" id="b-hc">Got it</button>
 </div>
 
 <script>
 (function() {
   'use strict';
 
-  const COLS = 4;
-  const ROWS = 8;
-  const CLEAR_MS = 350;
-  const CHAIN_MS = 200;
-  const POINTS_PER_LEVEL = 400;
+  const COLS = 5, ROWS = 10, MATCH = 3;
+  const NUM_TYPES = 5; // numbers 1-5
+  const CLEAR_MS = 300, CHAIN_MS = 180, PTS_PER_LV = 400;
 
-  // State
-  let grid, curNum, nxtNum, score, level, totalPairs, bestChain, gameOn, busy, paused;
-  let highScore = parseInt(localStorage.getItem('tendrop-hi') || '0', 10);
+  let grid, cur, nxt, score, level, clears, bestChain, on, busy, paused;
+  let hi = parseInt(localStorage.getItem('numdrop-hi') || '0', 10);
 
-  // DOM
   const $ = id => document.getElementById(id);
-  const gridEl = $('grid'), zonesEl = $('tap-zones'), btnsEl = $('col-buttons');
-  const scoreEl = $('score-val'), levelEl = $('level-val'), bestEl = $('best-val');
-  const curEl = $('cur-piece'), nxtEl = $('nxt-piece');
+  const gEl = $('grid'), zEl = $('zones'), bEl = $('cbtns');
 
-  // ── Build DOM ──
+  // Build grid DOM
   function build() {
-    gridEl.innerHTML = ''; zonesEl.innerHTML = ''; btnsEl.innerHTML = '';
+    gEl.innerHTML = ''; zEl.innerHTML = ''; bEl.innerHTML = '';
     for (let r = 0; r < ROWS; r++)
       for (let c = 0; c < COLS; c++) {
         const d = document.createElement('div');
-        d.className = 'cell'; d.id = `c${r}_${c}`;
-        gridEl.appendChild(d);
+        d.className = 'c'; d.id = `c${r}_${c}`;
+        gEl.appendChild(d);
       }
     for (let c = 0; c < COLS; c++) {
       const z = document.createElement('div');
-      z.className = 'tap-zone';
+      z.className = 'zone';
       z.addEventListener('click', () => drop(c));
-      zonesEl.appendChild(z);
-
+      zEl.appendChild(z);
       const b = document.createElement('div');
-      b.className = 'col-btn';
-      b.textContent = '\u25BC';
+      b.className = 'cbtn'; b.textContent = '\u25BC';
       b.addEventListener('click', () => drop(c));
-      btnsEl.appendChild(b);
+      bEl.appendChild(b);
     }
   }
 
-  // ── Grid helpers ──
   function initGrid() { grid = Array.from({length: ROWS}, () => Array(COLS).fill(0)); }
-
-  function cellEl(r, c) { return $(`c${r}_${c}`); }
+  function el(r, c) { return $(`c${r}_${c}`); }
 
   function render() {
-    const ghosts = [];
-    if (gameOn && !busy && curNum > 0)
-      for (let c = 0; c < COLS; c++) ghosts.push(landingRow(c));
+    const gh = [];
+    if (on && !busy && cur > 0)
+      for (let c = 0; c < COLS; c++) gh.push(landRow(c));
 
     for (let r = 0; r < ROWS; r++)
       for (let c = 0; c < COLS; c++) {
-        const el = cellEl(r, c), v = grid[r][c];
-        el.className = 'cell'; el.textContent = '';
-        if (v > 0) {
-          el.classList.add('filled', `num-${v}`);
-          el.textContent = v;
-        } else if (ghosts.length && ghosts[c] === r) {
-          el.classList.add('ghost', 'filled', `num-${curNum}`);
-          el.textContent = curNum;
-        }
+        const e = el(r, c), v = grid[r][c];
+        e.className = 'c'; e.textContent = '';
+        if (v > 0) { e.classList.add('f', `n${v}`); e.textContent = v; }
+        else if (gh.length && gh[c] === r) { e.classList.add('ghost', 'f', `n${cur}`); e.textContent = cur; }
       }
   }
 
-  function landingRow(col) {
+  function landRow(col) {
     for (let r = ROWS - 1; r >= 0; r--) if (grid[r][col] === 0) return r;
     return -1;
   }
 
-  // ── Number gen ──
-  function rng() { return Math.floor(Math.random() * 9) + 1; }
+  // Random number 1..NUM_TYPES
+  function rng() { return Math.floor(Math.random() * NUM_TYPES) + 1; }
 
   function spawn() {
-    curNum = nxtNum || rng();
-    nxtNum = rng();
-    curEl.textContent = curNum; curEl.className = `piece-num current-piece num-${curNum}`;
-    nxtEl.textContent = nxtNum; nxtEl.className = `piece-num next num-${nxtNum}`;
+    cur = nxt || rng();
+    nxt = rng();
+    $('cur').textContent = cur; $('cur').className = `pv-num cur n${cur}`;
+    $('nxt').textContent = nxt; $('nxt').className = `pv-num nxt n${nxt}`;
     render();
   }
 
-  // ── Drop ──
   function drop(col) {
-    if (!gameOn || busy || paused) return;
-    const row = landingRow(col);
+    if (!on || busy || paused) return;
+    const row = landRow(col);
     if (row < 0) return;
-
-    grid[row][col] = curNum;
+    grid[row][col] = cur;
     busy = true;
     render();
-    const el = cellEl(row, col);
-    el.classList.add('dropping');
-
-    setTimeout(() => { el.classList.remove('dropping'); processBoard(0); }, 180);
+    const e = el(row, col);
+    e.classList.add('drop');
+    setTimeout(() => { e.classList.remove('drop'); process(0); }, 150);
   }
 
-  // ── Process: find pairs, clear, gravity, chain ──
-  function processBoard(chain) {
-    // Find adjacent pairs summing to 10
-    const toClear = new Set();
+  // Find connected groups of same number with size >= MATCH
+  function findMatches() {
+    const visited = Array.from({length: ROWS}, () => Array(COLS).fill(false));
+    const groups = [];
 
     for (let r = 0; r < ROWS; r++)
       for (let c = 0; c < COLS; c++) {
-        if (grid[r][c] === 0) continue;
-        // Check right neighbor
-        if (c + 1 < COLS && grid[r][c] + grid[r][c + 1] === 10) {
-          toClear.add(`${r},${c}`); toClear.add(`${r},${c + 1}`);
+        if (grid[r][c] === 0 || visited[r][c]) continue;
+        // BFS to find connected group of same number
+        const val = grid[r][c];
+        const group = [];
+        const queue = [[r, c]];
+        visited[r][c] = true;
+        while (queue.length) {
+          const [cr, cc] = queue.shift();
+          group.push([cr, cc]);
+          for (const [dr, dc] of [[0,1],[0,-1],[1,0],[-1,0]]) {
+            const nr = cr + dr, nc = cc + dc;
+            if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && !visited[nr][nc] && grid[nr][nc] === val) {
+              visited[nr][nc] = true;
+              queue.push([nr, nc]);
+            }
+          }
         }
-        // Check below neighbor
-        if (r + 1 < ROWS && grid[r][c] + grid[r + 1][c] === 10) {
-          toClear.add(`${r},${c}`); toClear.add(`${r + 1},${c}`);
-        }
+        if (group.length >= MATCH) groups.push(group);
       }
+    return groups;
+  }
+
+  function process(chain) {
+    const groups = findMatches();
 
     // Also check full rows
     const fullRows = [];
     for (let r = 0; r < ROWS; r++)
       if (grid[r].every(v => v > 0)) fullRows.push(r);
 
-    for (const r of fullRows)
-      for (let c = 0; c < COLS; c++) toClear.add(`${r},${c}`);
+    // Collect cells to clear
+    const toClear = new Set();
+    for (const g of groups) for (const [r, c] of g) toClear.add(`${r},${c}`);
+    for (const r of fullRows) for (let c = 0; c < COLS; c++) toClear.add(`${r},${c}`);
 
-    // Nothing to clear?
     if (toClear.size === 0) {
       if (chain > 0) bestChain = Math.max(bestChain, chain);
-      if (isGameOver()) { endGame(); return; }
+      if (grid[0].some(v => v > 0)) { endGame(); return; }
       busy = false;
       spawn();
       return;
     }
 
-    // Score
-    const pairCount = Math.floor(toClear.size / 2);
-    totalPairs += pairCount;
+    clears += toClear.size;
     const mult = chain + 1;
-    const pts = (toClear.size * 15 + fullRows.length * 40) * mult;
+    const pts = (toClear.size * 10 + groups.length * 20 + fullRows.length * 50) * mult;
     addScore(pts);
-
     if (chain > 0) showCombo(mult);
 
-    // Animate
-    const anim = chain > 0 ? 'chain-clear' : 'clearing';
-    for (const k of toClear) {
-      const [r, c] = k.split(',').map(Number);
-      cellEl(r, c).classList.add(anim);
-    }
+    const anim = chain > 0 ? 'chain' : 'clearing';
+    for (const k of toClear) { const [r, c] = k.split(',').map(Number); el(r, c).classList.add(anim); }
 
     setTimeout(() => {
       for (const k of toClear) { const [r, c] = k.split(',').map(Number); grid[r][c] = 0; }
       gravity();
       render();
-      setTimeout(() => processBoard(chain + 1), CHAIN_MS);
+      setTimeout(() => process(chain + 1), CHAIN_MS);
     }, CLEAR_MS);
   }
 
@@ -581,94 +386,74 @@
     for (let c = 0; c < COLS; c++) {
       let w = ROWS - 1;
       for (let r = ROWS - 1; r >= 0; r--)
-        if (grid[r][c] > 0) {
-          if (r !== w) { grid[w][c] = grid[r][c]; grid[r][c] = 0; }
-          w--;
-        }
+        if (grid[r][c] > 0) { if (r !== w) { grid[w][c] = grid[r][c]; grid[r][c] = 0; } w--; }
     }
   }
 
-  function isGameOver() { return grid[0].some(v => v > 0); }
-
-  // ── Score ──
   function addScore(pts) {
     score += pts;
-    scoreEl.textContent = score;
-    if (score > highScore) {
-      highScore = score;
-      bestEl.textContent = highScore;
-      localStorage.setItem('tendrop-hi', String(highScore));
-    }
-    const nl = Math.floor(score / POINTS_PER_LEVEL) + 1;
-    if (nl > level) { level = nl; levelEl.textContent = level; }
+    $('sc').textContent = score;
+    if (score > hi) { hi = score; $('hi').textContent = hi; localStorage.setItem('numdrop-hi', String(hi)); }
+    const nl = Math.floor(score / PTS_PER_LV) + 1;
+    if (nl > level) { level = nl; $('lv').textContent = level; }
   }
 
-  function showCombo(mult) {
+  function showCombo(m) {
     const p = document.createElement('div');
-    p.className = 'combo-popup';
-    p.textContent = `x${mult} CHAIN!`;
-    $('grid-wrapper').appendChild(p);
-    setTimeout(() => p.remove(), 900);
+    p.className = 'combo'; p.textContent = `x${m} COMBO!`;
+    $('gw').appendChild(p);
+    setTimeout(() => p.remove(), 800);
   }
 
-  // ── Lifecycle ──
   function startGame() {
     initGrid();
-    score = 0; level = 1; totalPairs = 0; bestChain = 0;
-    busy = false; paused = false; gameOn = true;
-    scoreEl.textContent = '0'; levelEl.textContent = '1'; bestEl.textContent = highScore;
+    score = 0; level = 1; clears = 0; bestChain = 0;
+    busy = false; paused = false; on = true;
+    $('sc').textContent = '0'; $('lv').textContent = '1'; $('hi').textContent = hi;
     render(); spawn();
-    $('screen-start').classList.add('hidden');
-    $('screen-over').classList.add('hidden');
+    $('s-start').classList.add('hidden');
+    $('s-over').classList.add('hidden');
   }
 
   function endGame() {
-    gameOn = false;
-    $('over-score').textContent = score;
-    $('over-level').textContent = level;
-    $('over-pairs').textContent = totalPairs;
-    $('over-chains').textContent = bestChain;
-    $('over-msg').textContent = score >= highScore && score > 0 ? 'New High Score!' : 'Nice try!';
-    $('screen-over').classList.remove('hidden');
+    on = false;
+    $('o-sc').textContent = score;
+    $('o-lv').textContent = level;
+    $('o-cl').textContent = clears;
+    $('o-ch').textContent = bestChain;
+    $('o-msg').textContent = score >= hi && score > 0 ? 'New High Score!' : 'Nice try!';
+    $('s-over').classList.remove('hidden');
   }
 
   function togglePause() {
-    if (!gameOn || busy) return;
+    if (!on || busy) return;
     paused = !paused;
-    $('screen-pause').classList.toggle('hidden', !paused);
+    $('s-pause').classList.toggle('hidden', !paused);
   }
 
-  // ── Keyboard ──
+  // Keyboard
   document.addEventListener('keydown', e => {
-    if (!gameOn || busy || paused) {
+    if (!on || busy || paused) {
       if (e.key === 'Escape' && paused) togglePause();
-      if (e.key === 'Enter' && !gameOn) startGame();
+      if (e.key === 'Enter' && !on) startGame();
       return;
     }
-    if (e.key >= '1' && e.key <= '4') drop(+e.key - 1);
+    if (e.key >= '1' && e.key <= '5') drop(+e.key - 1);
     else if (e.key === 'Escape' || e.key === 'p') togglePause();
   });
 
-  // ── Buttons ──
-  $('btn-start').addEventListener('click', startGame);
-  $('btn-again').addEventListener('click', startGame);
-  $('btn-pause').addEventListener('click', togglePause);
-  $('btn-resume').addEventListener('click', togglePause);
+  // Buttons
+  $('b-go').addEventListener('click', startGame);
+  $('b-again').addEventListener('click', startGame);
+  $('bp').addEventListener('click', togglePause);
+  $('b-res').addEventListener('click', togglePause);
 
-  let helpWasPlaying = false;
-  $('btn-help').addEventListener('click', () => {
-    helpWasPlaying = gameOn && !paused;
-    if (helpWasPlaying) togglePause();
-    $('screen-help').classList.remove('hidden');
-  });
-  $('btn-help-close').addEventListener('click', () => {
-    $('screen-help').classList.add('hidden');
-    if (helpWasPlaying && gameOn && paused) togglePause();
-  });
+  let helpWas = false;
+  $('bh').addEventListener('click', () => { helpWas = on && !paused; if (helpWas) togglePause(); $('s-help').classList.remove('hidden'); });
+  $('b-hc').addEventListener('click', () => { $('s-help').classList.add('hidden'); if (helpWas && on && paused) togglePause(); });
 
-  // ── Init ──
   build();
-  bestEl.textContent = highScore;
+  $('hi').textContent = hi;
 })();
 </script>
 </body>
