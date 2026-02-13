@@ -1,0 +1,1203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>TenDrop - Number Match Puzzle</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #0f0f1a;
+    --panel: #1a1a2e;
+    --border: #2a2a4a;
+    --text: #e0e0ff;
+    --dim: #6a6a9a;
+    --accent: #00d4ff;
+    --gold: #ffd700;
+    --cell-gap: 2px;
+  }
+
+  html, body {
+    height: 100%;
+    overflow: hidden;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+
+  #game-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+    max-width: 420px;
+    height: 100%;
+    max-height: 800px;
+    padding: 8px;
+    gap: 8px;
+  }
+
+  /* ── Header ── */
+  #header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 4px 0;
+    flex-shrink: 0;
+  }
+
+  #header h1 {
+    font-size: 1.3rem;
+    font-weight: 800;
+    letter-spacing: 2px;
+    background: linear-gradient(135deg, var(--accent), #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .stat-box {
+    text-align: center;
+    min-width: 60px;
+  }
+
+  .stat-label {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--dim);
+  }
+
+  .stat-value {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text);
+  }
+
+  /* ── Info bar (next + timer) ── */
+  #info-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    padding: 6px 12px;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    flex-shrink: 0;
+  }
+
+  #pieces-section {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .piece-group {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+  }
+
+  .piece-label {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--dim);
+  }
+
+  .piece-num {
+    width: 44px;
+    height: 44px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    font-weight: 800;
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  }
+
+  .piece-num.current {
+    border: 2px solid rgba(255,255,255,0.4);
+    box-shadow: 0 0 12px rgba(0,212,255,0.3);
+  }
+
+  .piece-num.next-piece {
+    width: 34px;
+    height: 34px;
+    font-size: 1rem;
+    opacity: 0.7;
+  }
+
+  .piece-arrow {
+    color: var(--dim);
+    font-size: 1rem;
+  }
+
+  #timer-bar-container {
+    flex: 1;
+    max-width: 120px;
+    margin-left: 16px;
+  }
+
+  #timer-label {
+    font-size: 0.6rem;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--dim);
+    margin-bottom: 3px;
+  }
+
+  #timer-bar-bg {
+    width: 100%;
+    height: 6px;
+    background: var(--border);
+    border-radius: 3px;
+    overflow: hidden;
+  }
+
+  #timer-bar {
+    height: 100%;
+    width: 100%;
+    background: var(--accent);
+    border-radius: 3px;
+    transition: width 0.1s linear, background-color 0.3s;
+  }
+
+  /* ── Grid ── */
+  #grid-container {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+  }
+
+  #grid-wrapper {
+    position: relative;
+    background: var(--panel);
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    padding: var(--cell-gap);
+    width: 100%;
+    aspect-ratio: 6 / 12;
+    max-height: 100%;
+  }
+
+  #grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-rows: repeat(12, 1fr);
+    gap: var(--cell-gap);
+    width: 100%;
+    height: 100%;
+  }
+
+  .cell {
+    border-radius: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: clamp(0.8rem, 3.5vw, 1.4rem);
+    background: rgba(255, 255, 255, 0.03);
+    position: relative;
+    transition: transform 0.15s, opacity 0.15s;
+  }
+
+  .cell.filled {
+    color: #fff;
+    text-shadow: 0 1px 3px rgba(0,0,0,0.5);
+  }
+
+  .cell.clearing {
+    animation: clearPop 0.4s ease-out forwards;
+  }
+
+  .cell.dropping {
+    animation: dropIn 0.2s ease-in forwards;
+  }
+
+  .cell.ghost {
+    opacity: 0.25;
+    border: 2px dashed rgba(255, 255, 255, 0.3);
+  }
+
+  .cell.chain-clear {
+    animation: chainPop 0.45s ease-out forwards;
+  }
+
+  @keyframes clearPop {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.3); opacity: 0.8; }
+    100% { transform: scale(0); opacity: 0; }
+  }
+
+  @keyframes chainPop {
+    0% { transform: scale(1); opacity: 1; }
+    30% { transform: scale(1.4); opacity: 1; }
+    100% { transform: scale(0); opacity: 0; }
+  }
+
+  @keyframes dropIn {
+    0% { transform: translateY(-100%); opacity: 0.5; }
+    100% { transform: translateY(0); opacity: 1; }
+  }
+
+  /* ── Column tap zones ── */
+  #tap-zones {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    z-index: 10;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+
+  .tap-zone {
+    cursor: pointer;
+    transition: background 0.15s;
+  }
+
+  .tap-zone:active {
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  /* ── Column arrows ── */
+  #column-arrows {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: var(--cell-gap);
+    width: 100%;
+    padding: 0 var(--cell-gap);
+    margin-top: 6px;
+    flex-shrink: 0;
+  }
+
+  .col-arrow {
+    text-align: center;
+    font-size: 1rem;
+    color: var(--dim);
+    padding: 4px;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: color 0.15s, background 0.15s;
+  }
+
+  .col-arrow:active {
+    color: var(--accent);
+    background: rgba(0, 212, 255, 0.1);
+  }
+
+  /* ── Combo popup ── */
+  .combo-popup {
+    position: absolute;
+    font-size: 1.2rem;
+    font-weight: 800;
+    color: var(--gold);
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.6);
+    pointer-events: none;
+    z-index: 20;
+    animation: comboFloat 1s ease-out forwards;
+  }
+
+  @keyframes comboFloat {
+    0% { transform: translateY(0) scale(0.5); opacity: 0; }
+    20% { transform: translateY(-10px) scale(1.2); opacity: 1; }
+    100% { transform: translateY(-60px) scale(0.8); opacity: 0; }
+  }
+
+  /* ── Bottom controls ── */
+  #controls {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    width: 100%;
+    padding: 4px 0;
+    flex-shrink: 0;
+  }
+
+  .btn {
+    padding: 10px 20px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--panel);
+    color: var(--text);
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  .btn:active {
+    background: rgba(0, 212, 255, 0.15);
+    border-color: var(--accent);
+  }
+
+  /* ── Overlays ── */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 15, 26, 0.92);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+    gap: 16px;
+    padding: 24px;
+    text-align: center;
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+  }
+
+  .overlay.hidden { display: none; }
+
+  .overlay h2 {
+    font-size: 2rem;
+    font-weight: 800;
+    background: linear-gradient(135deg, var(--accent), #a855f7);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .overlay .subtitle {
+    color: var(--dim);
+    font-size: 0.9rem;
+    line-height: 1.6;
+    max-width: 300px;
+  }
+
+  .overlay .final-score {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--gold);
+  }
+
+  .overlay .btn-primary {
+    padding: 14px 40px;
+    border: none;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--accent), #a855f7);
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    margin-top: 8px;
+  }
+
+  .overlay .btn-primary:active {
+    opacity: 0.85;
+  }
+
+  /* ── How to play ── */
+  .how-to-play {
+    text-align: left;
+    max-width: 300px;
+    line-height: 1.7;
+    font-size: 0.85rem;
+    color: var(--dim);
+  }
+
+  .how-to-play strong {
+    color: var(--text);
+  }
+
+  .how-to-play .rule-icon {
+    display: inline-block;
+    width: 22px;
+    text-align: center;
+  }
+
+  /* ── Number colors ── */
+  .num-1 { background: #2563eb; }
+  .num-2 { background: #059669; }
+  .num-3 { background: #d97706; }
+  .num-4 { background: #dc2626; }
+  .num-5 { background: #7c3aed; }
+  .num-6 { background: #db2777; }
+  .num-7 { background: #0891b2; }
+  .num-8 { background: #65a30d; }
+  .num-9 { background: #ea580c; }
+
+  /* ── Row flash ── */
+  .row-flash .cell.filled {
+    animation: rowClear 0.5s ease-out forwards;
+  }
+
+  @keyframes rowClear {
+    0% { transform: scaleX(1); opacity: 1; }
+    40% { transform: scaleX(1.05); opacity: 1; background: var(--gold); }
+    100% { transform: scaleX(0); opacity: 0; }
+  }
+
+  /* ── Responsive ── */
+  @media (max-height: 650px) {
+    #game-wrapper { padding: 4px; gap: 4px; }
+    #info-bar { padding: 4px 8px; }
+    #next-number { width: 32px; height: 32px; font-size: 1.1rem; }
+  }
+</style>
+</head>
+<body>
+
+<div id="game-wrapper">
+  <!-- Header -->
+  <div id="header">
+    <div class="stat-box">
+      <div class="stat-label">Score</div>
+      <div class="stat-value" id="score-display">0</div>
+    </div>
+    <h1>TENDROP</h1>
+    <div style="display:flex;gap:12px;">
+      <div class="stat-box">
+        <div class="stat-label">Level</div>
+        <div class="stat-value" id="level-display">1</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-label">Best</div>
+        <div class="stat-value" id="best-display" style="color:var(--gold)">0</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Info bar -->
+  <div id="info-bar">
+    <div id="pieces-section">
+      <div class="piece-group">
+        <span class="piece-label">Current</span>
+        <div id="current-number" class="piece-num current num-5">5</div>
+      </div>
+      <span class="piece-arrow">&#9654;</span>
+      <div class="piece-group">
+        <span class="piece-label">Next</span>
+        <div id="next-number" class="piece-num next-piece num-3">3</div>
+      </div>
+    </div>
+    <div id="timer-bar-container">
+      <div id="timer-label">Time</div>
+      <div id="timer-bar-bg">
+        <div id="timer-bar"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game grid -->
+  <div id="grid-container">
+    <div id="grid-wrapper">
+      <div id="grid"></div>
+      <div id="tap-zones"></div>
+    </div>
+  </div>
+
+  <!-- Column arrows -->
+  <div id="column-arrows"></div>
+
+  <!-- Controls -->
+  <div id="controls">
+    <button class="btn" id="btn-pause">Pause</button>
+    <button class="btn" id="btn-help">How to Play</button>
+  </div>
+</div>
+
+<!-- Start screen -->
+<div class="overlay" id="start-screen">
+  <h2>TENDROP</h2>
+  <p class="subtitle">A number matching puzzle game</p>
+  <div class="how-to-play">
+    <p><strong><span class="rule-icon">&#9660;</span> Drop:</strong> Tap a column to drop numbers</p>
+    <p><strong><span class="rule-icon">&#10010;</span> Match:</strong> Adjacent numbers summing to <strong>10</strong> clear automatically</p>
+    <p><strong><span class="rule-icon">&#9644;</span> Rows:</strong> Complete rows also clear (like Tetris!)</p>
+    <p><strong><span class="rule-icon">&#9889;</span> Chains:</strong> Cascading clears earn combo bonuses</p>
+    <p><strong><span class="rule-icon">&#9888;</span> Watch out:</strong> If a column overflows, it's game over!</p>
+  </div>
+  <button class="btn-primary" id="btn-start">Play</button>
+</div>
+
+<!-- Game over screen -->
+<div class="overlay hidden" id="gameover-screen">
+  <h2>Game Over</h2>
+  <p class="subtitle" id="gameover-subtitle"></p>
+  <div class="final-score" id="final-score">0</div>
+  <p class="stat-label">Final Score</p>
+  <div style="display:flex;gap:12px;margin-top:4px;">
+    <div class="stat-box">
+      <div class="stat-label">Level</div>
+      <div class="stat-value" id="final-level">1</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Best Chain</div>
+      <div class="stat-value" id="final-chain">0</div>
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Clears</div>
+      <div class="stat-value" id="final-clears">0</div>
+    </div>
+  </div>
+  <button class="btn-primary" id="btn-restart">Play Again</button>
+</div>
+
+<!-- Pause screen -->
+<div class="overlay hidden" id="pause-screen">
+  <h2>Paused</h2>
+  <button class="btn-primary" id="btn-resume">Resume</button>
+</div>
+
+<!-- Help screen -->
+<div class="overlay hidden" id="help-screen">
+  <h2>How to Play</h2>
+  <div class="how-to-play">
+    <p><strong><span class="rule-icon">&#9660;</span> Drop:</strong> Tap a column to drop the current number into it.</p>
+    <p><strong><span class="rule-icon">&#10010;</span> Sum to 10:</strong> When adjacent numbers (up/down/left/right) form a connected group that sums to exactly <strong>10</strong>, they clear!</p>
+    <p><strong><span class="rule-icon">&#9644;</span> Full rows:</strong> A completely filled row clears too, just like Tetris.</p>
+    <p><strong><span class="rule-icon">&#9889;</span> Chains:</strong> After a clear, blocks fall. If new groups of 10 form, they chain-clear for bonus points!</p>
+    <p><strong><span class="rule-icon">&#11014;</span> Levels:</strong> Every 500 points, the level increases and the drop timer speeds up.</p>
+    <p><strong><span class="rule-icon">&#9888;</span> Game Over:</strong> If any column fills past the top, the game ends.</p>
+  </div>
+  <button class="btn-primary" id="btn-help-close">Got it</button>
+</div>
+
+<script>
+(function() {
+  'use strict';
+
+  // ── Constants ──
+  const COLS = 6;
+  const ROWS = 12;
+  const BASE_TIMER = 8000;       // ms for level 1
+  const MIN_TIMER = 2000;        // fastest timer
+  const TIMER_REDUCTION = 500;   // ms reduction per level
+  const POINTS_PER_LEVEL = 500;
+  const CLEAR_DELAY = 400;       // animation time for clears
+  const GRAVITY_DELAY = 200;     // pause after gravity before re-checking
+  const CHAIN_PAUSE = 250;       // pause between chain steps
+
+  // ── State ──
+  let grid = [];          // grid[row][col] = 0 (empty) or 1-9
+  let currentNum = 0;
+  let nextNum = 0;
+  let score = 0;
+  let level = 1;
+  let totalClears = 0;
+  let bestChain = 0;
+  let timerRemaining = 0;
+  let timerTotal = 0;
+  let timerInterval = null;
+  let gameRunning = false;
+  let processing = false; // true while clears/gravity animate
+  let paused = false;
+  let pausedTimerRemaining = 0;
+  let highScore = parseInt(localStorage.getItem('tendrop-highscore') || '0', 10);
+
+  // ── DOM refs ──
+  const gridEl = document.getElementById('grid');
+  const tapZonesEl = document.getElementById('tap-zones');
+  const arrowsEl = document.getElementById('column-arrows');
+  const scoreEl = document.getElementById('score-display');
+  const levelEl = document.getElementById('level-display');
+  const currentNumEl = document.getElementById('current-number');
+  const nextNumEl = document.getElementById('next-number');
+  const timerBarEl = document.getElementById('timer-bar');
+
+  const bestEl = document.getElementById('best-display');
+
+  const startScreen = document.getElementById('start-screen');
+  const gameoverScreen = document.getElementById('gameover-screen');
+  const pauseScreen = document.getElementById('pause-screen');
+  const helpScreen = document.getElementById('help-screen');
+
+  // ── Init grid DOM ──
+  function buildDOM() {
+    gridEl.innerHTML = '';
+    tapZonesEl.innerHTML = '';
+    arrowsEl.innerHTML = '';
+
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const cell = document.createElement('div');
+        cell.className = 'cell';
+        cell.id = `cell-${r}-${c}`;
+        gridEl.appendChild(cell);
+      }
+    }
+
+    for (let c = 0; c < COLS; c++) {
+      const zone = document.createElement('div');
+      zone.className = 'tap-zone';
+      zone.dataset.col = c;
+      zone.addEventListener('click', () => onColumnTap(c));
+      tapZonesEl.appendChild(zone);
+
+      const arrow = document.createElement('div');
+      arrow.className = 'col-arrow';
+      arrow.textContent = '\u25B2';
+      arrow.addEventListener('click', () => onColumnTap(c));
+      arrowsEl.appendChild(arrow);
+    }
+  }
+
+  // ── Grid logic ──
+  function initGrid() {
+    grid = [];
+    for (let r = 0; r < ROWS; r++) {
+      grid.push(new Array(COLS).fill(0));
+    }
+  }
+
+  function renderGrid() {
+    // Calculate ghost positions for each column
+    const ghostRows = [];
+    if (gameRunning && !processing && currentNum > 0) {
+      for (let c = 0; c < COLS; c++) {
+        ghostRows.push(getDropRow(c));
+      }
+    }
+
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        const cell = document.getElementById(`cell-${r}-${c}`);
+        const val = grid[r][c];
+        cell.className = 'cell';
+        cell.textContent = '';
+        if (val > 0) {
+          cell.classList.add('filled', `num-${val}`);
+          cell.textContent = val;
+        } else if (ghostRows.length > 0 && ghostRows[c] === r) {
+          cell.classList.add('ghost', 'filled', `num-${currentNum}`);
+          cell.textContent = currentNum;
+        }
+      }
+    }
+  }
+
+  function getDropRow(col) {
+    for (let r = ROWS - 1; r >= 0; r--) {
+      if (grid[r][col] === 0) return r;
+    }
+    return -1; // column full
+  }
+
+  // ── Number generation ──
+  function randomNum() {
+    // Weighted: slightly favor mid-range numbers for better gameplay
+    const weights = [0, 8, 10, 12, 10, 14, 10, 12, 10, 8]; // index 1-9
+    const total = weights.reduce((a, b) => a + b, 0);
+    let rand = Math.random() * total;
+    for (let i = 1; i <= 9; i++) {
+      rand -= weights[i];
+      if (rand <= 0) return i;
+    }
+    return 5;
+  }
+
+  function spawnNumber() {
+    currentNum = nextNum || randomNum();
+    nextNum = randomNum();
+    updateDisplay();
+  }
+
+  function updateDisplay() {
+    currentNumEl.textContent = currentNum;
+    currentNumEl.className = `piece-num current num-${currentNum}`;
+    nextNumEl.textContent = nextNum;
+    nextNumEl.className = `piece-num next-piece num-${nextNum}`;
+  }
+
+  // ── Drop a number ──
+  function onColumnTap(col) {
+    if (!gameRunning || processing || paused) return;
+
+    const row = getDropRow(col);
+    if (row < 0) return; // column full, ignore tap
+
+    // Place the number
+    grid[row][col] = currentNum;
+
+    // Render with drop animation
+    const cell = document.getElementById(`cell-${row}-${col}`);
+    renderGrid();
+    cell.classList.add('dropping');
+
+    // Reset timer and process
+    processing = true;
+    stopTimer();
+
+    setTimeout(() => {
+      cell.classList.remove('dropping');
+      processBoard(0);
+    }, 200);
+  }
+
+  // ── Board processing: find clears, apply gravity, chain ──
+  function processBoard(chainDepth) {
+    // 1. Check for full rows
+    const fullRows = [];
+    for (let r = 0; r < ROWS; r++) {
+      if (grid[r].every(v => v > 0)) {
+        fullRows.push(r);
+      }
+    }
+
+    // 2. Find connected groups that sum to 10
+    const sumGroups = findSumTenGroups();
+
+    if (fullRows.length === 0 && sumGroups.length === 0) {
+      // No clears — check game over, then continue
+      if (isGameOver()) {
+        endGame();
+        return;
+      }
+      if (chainDepth > 0) {
+        bestChain = Math.max(bestChain, chainDepth);
+      }
+      processing = false;
+      spawnNumber();
+      startTimer();
+      return;
+    }
+
+    // Collect all cells to clear
+    const toClear = new Set();
+
+    for (const r of fullRows) {
+      for (let c = 0; c < COLS; c++) {
+        toClear.add(`${r},${c}`);
+      }
+    }
+
+    for (const group of sumGroups) {
+      for (const [r, c] of group) {
+        toClear.add(`${r},${c}`);
+      }
+    }
+
+    // Count cleared cells for scoring
+    const clearedCount = toClear.size;
+    totalClears += clearedCount;
+
+    // Calculate score
+    const chainMultiplier = chainDepth + 1;
+    const rowBonus = fullRows.length * 50;
+    const matchBonus = sumGroups.length * 30;
+    const cellPoints = clearedCount * 10;
+    const points = (cellPoints + rowBonus + matchBonus) * chainMultiplier;
+    addScore(points);
+
+    // Show combo popup if chain
+    if (chainDepth > 0) {
+      showComboPopup(chainMultiplier, toClear);
+    }
+
+    // Animate clears
+    const animClass = chainDepth > 0 ? 'chain-clear' : 'clearing';
+    for (const key of toClear) {
+      const [r, c] = key.split(',').map(Number);
+      const cell = document.getElementById(`cell-${r}-${c}`);
+      cell.classList.add(animClass);
+    }
+
+    setTimeout(() => {
+      // Remove cleared cells from grid
+      for (const key of toClear) {
+        const [r, c] = key.split(',').map(Number);
+        grid[r][c] = 0;
+      }
+
+      // Apply gravity
+      applyGravity();
+      renderGrid();
+
+      // Wait then check for chain
+      setTimeout(() => {
+        processBoard(chainDepth + 1);
+      }, CHAIN_PAUSE);
+    }, CLEAR_DELAY);
+  }
+
+  // ── Find connected groups summing to 10 ──
+  function findSumTenGroups() {
+    const groups = [];
+    const components = findConnectedComponents();
+    const usedCells = new Set(); // prevent overlapping groups
+
+    for (const component of components) {
+      const compGroups = findSubsetsSumTen(component);
+      // Greedily pick non-overlapping groups, preferring larger ones
+      compGroups.sort((a, b) => b.length - a.length);
+      for (const group of compGroups) {
+        const overlap = group.some(([r, c]) => usedCells.has(`${r},${c}`));
+        if (!overlap) {
+          groups.push(group);
+          for (const [r, c] of group) {
+            usedCells.add(`${r},${c}`);
+          }
+        }
+      }
+    }
+
+    return groups;
+  }
+
+  function findConnectedComponents() {
+    const visited = Array.from({ length: ROWS }, () => new Array(COLS).fill(false));
+    const components = [];
+
+    for (let r = 0; r < ROWS; r++) {
+      for (let c = 0; c < COLS; c++) {
+        if (grid[r][c] > 0 && !visited[r][c]) {
+          const component = [];
+          const queue = [[r, c]];
+          visited[r][c] = true;
+          while (queue.length > 0) {
+            const [cr, cc] = queue.shift();
+            component.push([cr, cc]);
+            for (const [dr, dc] of [[0,1],[0,-1],[1,0],[-1,0]]) {
+              const nr = cr + dr, nc = cc + dc;
+              if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && !visited[nr][nc] && grid[nr][nc] > 0) {
+                visited[nr][nc] = true;
+                queue.push([nr, nc]);
+              }
+            }
+          }
+          components.push(component);
+        }
+      }
+    }
+
+    return components;
+  }
+
+  // Find connected subsets within a component that sum to exactly 10
+  // We limit component search to avoid exponential blowup
+  function findSubsetsSumTen(component) {
+    const results = [];
+
+    if (component.length > 20) {
+      // For large components, only check local neighborhoods (BFS from each cell, depth limited)
+      for (const [startR, startC] of component) {
+        findGroupsFrom(startR, startC, results);
+      }
+      return results;
+    }
+
+    // For small components, do proper connected-subset enumeration
+    // Use DFS: pick cells in order, try include/exclude, maintain connectivity
+    const cellSet = new Set(component.map(([r, c]) => `${r},${c}`));
+    findConnectedSubsets(component, cellSet, results);
+    return results;
+  }
+
+  // BFS-based local search from a starting cell
+  function findGroupsFrom(startR, startC, results) {
+    const startVal = grid[startR][startC];
+    if (startVal === 0) return;
+    if (startVal === 10) {
+      // Single cell can't be 10 since max is 9
+      return;
+    }
+
+    // BFS expansion: try growing from this cell
+    const found = [];
+    dfsGrow([[startR, startC]], startVal, new Set([`${startR},${startC}`]), found, 5);
+
+    for (const group of found) {
+      results.push(group);
+    }
+  }
+
+  function dfsGrow(current, currentSum, visited, found, maxDepth) {
+    if (currentSum === 10) {
+      found.push(current.map(c => [...c]));
+      return; // don't grow further once we hit 10
+    }
+    if (currentSum > 10 || maxDepth <= 0) return;
+
+    // Find neighbors of current group
+    const neighbors = new Set();
+    for (const [r, c] of current) {
+      for (const [dr, dc] of [[0,1],[0,-1],[1,0],[-1,0]]) {
+        const nr = r + dr, nc = c + dc;
+        const key = `${nr},${nc}`;
+        if (nr >= 0 && nr < ROWS && nc >= 0 && nc < COLS && grid[nr][nc] > 0 && !visited.has(key)) {
+          neighbors.add(key);
+        }
+      }
+    }
+
+    for (const key of neighbors) {
+      const [nr, nc] = key.split(',').map(Number);
+      const val = grid[nr][nc];
+      visited.add(key);
+      current.push([nr, nc]);
+      dfsGrow(current, currentSum + val, visited, found, maxDepth - 1);
+      current.pop();
+      visited.delete(key);
+    }
+  }
+
+  // Proper connected-subset enumeration for small components
+  function findConnectedSubsets(component, cellSet, results) {
+    // For each starting cell, do DFS growth
+    const seen = new Set(); // avoid duplicate groups
+
+    for (let i = 0; i < component.length; i++) {
+      const [sr, sc] = component[i];
+      const found = [];
+      dfsGrow([[sr, sc]], grid[sr][sc], new Set([`${sr},${sc}`]), found, 6);
+      for (const group of found) {
+        const key = group.map(([r, c]) => `${r},${c}`).sort().join('|');
+        if (!seen.has(key)) {
+          seen.add(key);
+          results.push(group);
+        }
+      }
+    }
+  }
+
+  // ── Gravity ──
+  function applyGravity() {
+    for (let c = 0; c < COLS; c++) {
+      let writeRow = ROWS - 1;
+      for (let r = ROWS - 1; r >= 0; r--) {
+        if (grid[r][c] > 0) {
+          if (r !== writeRow) {
+            grid[writeRow][c] = grid[r][c];
+            grid[r][c] = 0;
+          }
+          writeRow--;
+        }
+      }
+    }
+  }
+
+  // ── Game over check ──
+  function isGameOver() {
+    // Game over if any cell in row 0 is filled
+    return grid[0].some(v => v > 0);
+  }
+
+  // ── Score ──
+  function addScore(points) {
+    score += points;
+    scoreEl.textContent = score;
+    if (score > highScore) {
+      highScore = score;
+      bestEl.textContent = highScore;
+      localStorage.setItem('tendrop-highscore', String(highScore));
+    }
+    const newLevel = Math.floor(score / POINTS_PER_LEVEL) + 1;
+    if (newLevel > level) {
+      level = newLevel;
+      levelEl.textContent = level;
+    }
+  }
+
+  // ── Combo popup ──
+  function showComboPopup(multiplier, cellKeys) {
+    const wrapper = document.getElementById('grid-wrapper');
+    const popup = document.createElement('div');
+    popup.className = 'combo-popup';
+    popup.textContent = `x${multiplier} CHAIN!`;
+    popup.style.left = '50%';
+    popup.style.top = '50%';
+    popup.style.transform = 'translate(-50%, -50%)';
+    wrapper.appendChild(popup);
+    setTimeout(() => popup.remove(), 1000);
+  }
+
+  // ── Timer ──
+  function getTimerDuration() {
+    return Math.max(MIN_TIMER, BASE_TIMER - (level - 1) * TIMER_REDUCTION);
+  }
+
+  function startTimer() {
+    timerTotal = getTimerDuration();
+    timerRemaining = timerTotal;
+    timerBarEl.style.width = '100%';
+    timerBarEl.style.backgroundColor = 'var(--accent)';
+
+    const tick = 50;
+    timerInterval = setInterval(() => {
+      if (paused) return;
+      timerRemaining -= tick;
+      const pct = Math.max(0, timerRemaining / timerTotal * 100);
+      timerBarEl.style.width = pct + '%';
+
+      if (pct < 30) {
+        timerBarEl.style.backgroundColor = '#ef4444';
+      } else if (pct < 60) {
+        timerBarEl.style.backgroundColor = '#f59e0b';
+      }
+
+      if (timerRemaining <= 0) {
+        stopTimer();
+        autoDropRandom();
+      }
+    }, tick);
+  }
+
+  function stopTimer() {
+    if (timerInterval) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+    }
+  }
+
+  function autoDropRandom() {
+    if (!gameRunning || processing || paused) return;
+
+    // Pick a random non-full column
+    const available = [];
+    for (let c = 0; c < COLS; c++) {
+      if (getDropRow(c) >= 0) available.push(c);
+    }
+
+    if (available.length === 0) {
+      endGame();
+      return;
+    }
+
+    const col = available[Math.floor(Math.random() * available.length)];
+    onColumnTap(col);
+  }
+
+  // ── Game lifecycle ──
+  function startGame() {
+    initGrid();
+    score = 0;
+    level = 1;
+    totalClears = 0;
+    bestChain = 0;
+    processing = false;
+    paused = false;
+    gameRunning = true;
+
+    scoreEl.textContent = '0';
+    levelEl.textContent = '1';
+    bestEl.textContent = highScore;
+
+    renderGrid();
+    spawnNumber();
+    startTimer();
+
+    startScreen.classList.add('hidden');
+    gameoverScreen.classList.add('hidden');
+  }
+
+  function endGame() {
+    gameRunning = false;
+    stopTimer();
+
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('final-level').textContent = level;
+    document.getElementById('final-chain').textContent = bestChain;
+    document.getElementById('final-clears').textContent = totalClears;
+    document.getElementById('gameover-subtitle').textContent =
+      score >= highScore && score > 0 ? 'New High Score!' : 'Keep practicing!';
+    gameoverScreen.classList.remove('hidden');
+  }
+
+  function togglePause() {
+    if (!gameRunning || processing) return;
+    if (paused) {
+      paused = false;
+      pauseScreen.classList.add('hidden');
+      // Resume timer
+      if (!timerInterval) startTimer();
+    } else {
+      paused = true;
+      pausedTimerRemaining = timerRemaining;
+      stopTimer();
+      pauseScreen.classList.remove('hidden');
+    }
+  }
+
+  // ── Keyboard support ──
+  document.addEventListener('keydown', (e) => {
+    if (!gameRunning || processing || paused) {
+      if (e.key === 'Escape' && paused) togglePause();
+      if (e.key === 'Enter' && !gameRunning) {
+        if (!gameoverScreen.classList.contains('hidden')) startGame();
+        if (!startScreen.classList.contains('hidden')) startGame();
+      }
+      return;
+    }
+
+    const keyMap = {
+      '1': 0, '2': 1, '3': 2, '4': 3, '5': 4, '6': 5,
+    };
+
+    if (e.key in keyMap) {
+      onColumnTap(keyMap[e.key]);
+    } else if (e.key === 'Escape' || e.key === 'p') {
+      togglePause();
+    }
+  });
+
+  // ── Swipe support for mobile ──
+  let touchStartX = null;
+  let touchStartY = null;
+
+  document.addEventListener('touchstart', (e) => {
+    if (e.target.closest('#tap-zones') || e.target.closest('.col-arrow')) return;
+    touchStartX = e.touches[0].clientX;
+    touchStartY = e.touches[0].clientY;
+  }, { passive: true });
+
+  document.addEventListener('touchend', (e) => {
+    touchStartX = null;
+    touchStartY = null;
+  }, { passive: true });
+
+  // ── Button handlers ──
+  document.getElementById('btn-start').addEventListener('click', startGame);
+  document.getElementById('btn-restart').addEventListener('click', startGame);
+  document.getElementById('btn-pause').addEventListener('click', togglePause);
+  document.getElementById('btn-resume').addEventListener('click', togglePause);
+
+  let helpOpenedWhilePlaying = false;
+  document.getElementById('btn-help').addEventListener('click', () => {
+    helpOpenedWhilePlaying = false;
+    if (gameRunning && !paused) {
+      helpOpenedWhilePlaying = true;
+      togglePause();
+    }
+    helpScreen.classList.remove('hidden');
+  });
+  document.getElementById('btn-help-close').addEventListener('click', () => {
+    helpScreen.classList.add('hidden');
+    if (helpOpenedWhilePlaying && gameRunning && paused) {
+      togglePause(); // resume
+    }
+  });
+
+  // ── Build ──
+  buildDOM();
+  bestEl.textContent = highScore;
+
+})();
+</script>
+
+</body>
+</html>
